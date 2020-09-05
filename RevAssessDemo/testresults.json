@@ -1,0 +1,1 @@
+[{"testName":"test3()","points":120,"isSuccessful":true,"errorMessage":"SUCCESS"},{"testName":"test1()","points":100,"isSuccessful":true,"errorMessage":"SUCCESS"},{"testName":"test2()","points":0,"isSuccessful":false,"errorMessage":"org.opentest4j.AssertionFailedError: expected: ^15^ but was: ^16^"}]
