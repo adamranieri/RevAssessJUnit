@@ -15,5 +15,7 @@ import org.junit.jupiter.api.Test;
 public @interface RevaTest {
 	
 	int points();
+	int tier();
+
 
 }

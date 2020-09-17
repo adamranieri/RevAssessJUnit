@@ -17,19 +17,29 @@ public class BasicTests {
 	
 
 
-	@RevaTest(points = 100)
+	@RevaTest(points = 50, tier = 1)
 	void test1() {
 		System.out.println("Hello");		
 	}
 
-	@RevaTest(points = 35)
+	@RevaTest(points = 100, tier = 2)
 	void test2() {
 		System.out.println("Hola");	
 		Assertions.assertEquals(15, 16);
 	}
 	
-	@RevaTest(points = 120)
+	@RevaTest(points = 150, tier = 2)
 	void test3() {
+		System.out.println("bonjur");	
+	}
+	
+	@RevaTest(points = 200, tier = 2)
+	void test4() {
+		System.out.println("bonjur");	
+	}
+	
+	@RevaTest(points = 500, tier = 3)
+	void test5() {
 		System.out.println("bonjur");	
 	}
 	

@@ -35,7 +35,8 @@ public class RevAssess implements AfterTestExecutionCallback {
 		
 		if (context.getExecutionException().isPresent()) {
 			JUnitTest test = new JUnitTest(context.getDisplayName(), 0, false,
-					context.getExecutionException().get().toString());
+					context.getExecutionException().get().toString(),
+					context.getTestMethod().get().getDeclaredAnnotation(RevaTest.class).tier());
 			test.errorMessage = test.errorMessage.replace('<', '^');
 			test.errorMessage = test.errorMessage.replace('>', '^');
 
@@ -44,7 +45,10 @@ public class RevAssess implements AfterTestExecutionCallback {
 		} else {
 
 			JUnitTest test = new JUnitTest(context.getDisplayName(),
-					context.getTestMethod().get().getDeclaredAnnotation(RevaTest.class).points(), true, "SUCCESS");
+					context.getTestMethod().get().getDeclaredAnnotation(RevaTest.class).points(), 
+					true, 
+					"SUCCESS",
+					context.getTestMethod().get().getDeclaredAnnotation(RevaTest.class).tier());
 
 			testsMap.put(test.testName, test);
 			writeToJsonFile(testsMap);
@@ -116,14 +120,20 @@ public class RevAssess implements AfterTestExecutionCallback {
 		int points;
 		boolean isSuccessful;
 		String errorMessage;
+		int tier;
 
-		public JUnitTest(String testName, int points, boolean isSuccessful, String errorMessage) {
+		
+
+		public JUnitTest(String testName, int points, boolean isSuccessful, String errorMessage, int tier) {
 			super();
 			this.testName = testName;
 			this.points = points;
 			this.isSuccessful = isSuccessful;
 			this.errorMessage = errorMessage;
+			this.tier = tier;
 		}
+
+
 
 		@Override
 		public String toString() {
