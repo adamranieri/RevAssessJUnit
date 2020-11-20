@@ -1,1 +1,7 @@
-{"tiers":[{"level":1,"threshold":0},{"level":2,"threshold":50},{"level":3,"threshold":700}]}
+{
+    "associateEmail":"billymcassociate@example.com",
+    "associateName":"Billy McAssociate", 
+    "assessmentId":101,
+    "serverLocation":"http://localhost:3000/sample",
+    "tiers":[{"level":1,"threshold":0},{"level":2,"threshold":50},{"level":3,"threshold":700}]
+}

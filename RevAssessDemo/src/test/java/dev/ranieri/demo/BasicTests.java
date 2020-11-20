@@ -16,7 +16,6 @@ import dev.ranieri.assesors.RevaTest;
 public class BasicTests {
 	
 
-
 	@RevaTest(points = 50, tier = 1)
 	void test1() {
 		System.out.println("Hello");		
@@ -28,12 +27,12 @@ public class BasicTests {
 		Assertions.assertEquals(15, 16);
 	}
 	
-	@RevaTest(points = 150, tier = 2)
+	@RevaTest
 	void test3() {
 		System.out.println("bonjur");	
 	}
 	
-	@RevaTest(points = 200, tier = 2)
+	@RevaTest(points = 200)
 	void test4() {
 		System.out.println("bonjur");	
 	}

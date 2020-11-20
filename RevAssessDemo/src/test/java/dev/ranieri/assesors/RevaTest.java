@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 @Tag("RevaTest")
 public @interface RevaTest {
 	
-	int points();
-	int tier();
+	int points() default 0;
+	int tier() default 0;
 
 
 }
