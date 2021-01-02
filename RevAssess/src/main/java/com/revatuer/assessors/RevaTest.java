@@ -1,4 +1,4 @@
-package dev.ranieri.assesors;
+package com.revatuer.assessors;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

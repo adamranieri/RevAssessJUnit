@@ -1,7 +1,8 @@
-package dev.ranieri.assesors;
+package com.revatuer.assessors;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,14 +29,18 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 
+import java.nio.file.Files;
 
 
 public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 
 	private static Gson gson = new Gson();
 	private static RevAssessConfig config = null;
+	private static List<JUnitTest> testResults = null;
 	
 	
 	private static void readRevAssessConfig() {
@@ -45,7 +52,25 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 				json.append((char) i);
 			}
 			config = gson.fromJson(json.toString(), RevAssessConfig.class);
-			System.out.println(config);
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void readRevAssessTestResults() {
+		try (FileReader reader = new FileReader("TestResults.json")) {
+			
+			StringBuilder json = new StringBuilder("");
+			int i;
+			while ((i = reader.read()) != -1) {
+				json.append((char) i);
+			}
+			String resultsJson = json.toString();
+			Type listType = new TypeToken<List<JUnitTest>>() {}.getType();
+			testResults = new Gson().fromJson(resultsJson, listType);
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -56,9 +81,10 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 
 	@Override
 	public void afterAll(ExtensionContext context) throws Exception {
-		
-		readRevAssessConfig();
 
+		readRevAssessConfig();
+		readRevAssessTestResults();
+		
 		File directoryToZip = new File(System.getProperty("user.dir"));
 		List<File> fileList = new ArrayList<File>();
 		getAllFiles(directoryToZip, fileList);
@@ -70,15 +96,22 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 		
 		HttpClient client = HttpClientBuilder.create().build();
 		File file = new File(zipFile);
-		FileBody fb = new FileBody(file,ContentType.DEFAULT_BINARY);
-		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-		builder.addPart("file", fb);
-		HttpEntity entity = builder.build();
-		HttpPost post = new HttpPost(config.serverLocation);
-		post.setEntity(entity);
-		HttpResponse response = client.execute(post);
+		byte[] encoded = (Files.readAllBytes(file.toPath()));
+		String encodedString = Base64.getEncoder().encodeToString(encoded);
+
+		/////////////		
+		HttpPut put = new HttpPut(config.serverLocation);
+		put.setHeader("Content-Type","application/json");
+		AssessmentPayload payload = new AssessmentPayload();
+		payload.base64EncodedResults = encodedString;
+		payload.config = config;
+		payload.tests = testResults;
+		put.setEntity(new StringEntity(gson.toJson(payload)));
+		//put.setEntity(new StringEntity("{\"encodedFile\":\""+encodedString+"\",\"assessmentId\":\""+config.assessmentId+"\"}"));
+		HttpResponse response = client.execute(put);		
 		file.delete();
 
+		// "{"encodedFile":"Adam"}"
 	}
 
 	public static void getAllFiles(File dir, List<File> fileList) {
@@ -179,7 +212,7 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 		for(JUnitTest test : testsList) {
 			totalPoints += test.points;
 		}
-		try (FileWriter file = new FileWriter("testresults.json")) {
+		try (FileWriter file = new FileWriter("TestResults.json")) {
 
 			file.write(gson.toJson(testsList));
 			file.flush();
@@ -195,7 +228,7 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 		File f = new File("testresults.json");
 
 		if (!f.exists()) {
-			try (FileWriter file = new FileWriter("testresults.json")) {
+			try (FileWriter file = new FileWriter("TestResults.json")) {
 				file.write("[]");
 				file.flush();
 
@@ -207,7 +240,7 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 
 		Type junitListType = new TypeToken<List<JUnitTest>>() {
 		}.getType();
-		try (FileReader reader = new FileReader("testresults.json")) {
+		try (FileReader reader = new FileReader("TestResults.json")) {
 
 			StringBuilder json = new StringBuilder("");
 			int i;
@@ -251,18 +284,21 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 	}
 	
 	class RevAssessConfig{
+		String exerciseId;
 		String associateEmail;
 		String associateName;
-		int assessmentId;
+		String assessmentId;
 		String serverLocation;
 		List<Tier> tiers;
-		public RevAssessConfig(String associateEmail, String associateName, int assessmentId, String serverLocaiton,
-				List<Tier> tiers) {
+		
+		public RevAssessConfig(String exerciseid, String associateEmail, String associateName, String assessmentId,
+				String serverLocation, List<Tier> tiers) {
 			super();
+			this.exerciseId = exerciseid;
 			this.associateEmail = associateEmail;
 			this.associateName = associateName;
 			this.assessmentId = assessmentId;
-			this.serverLocation = serverLocaiton;
+			this.serverLocation = serverLocation;
 			this.tiers = tiers;
 		}
 		public RevAssessConfig() {
@@ -282,5 +318,38 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 		int level;
 		int threshold;
 	}
-
+	
+	class AssessmentPayload{
+		RevAssessConfig config;
+		List<JUnitTest> tests;
+		String base64EncodedResults;
+		public RevAssessConfig getConfig() {
+			return config;
+		}
+		public void setConfig(RevAssessConfig config) {
+			this.config = config;
+		}
+		public List<JUnitTest> getTests() {
+			return tests;
+		}
+		public void setTests(List<JUnitTest> tests) {
+			this.tests = tests;
+		}
+		public String getBase64EncodedResults() {
+			return base64EncodedResults;
+		}
+		public void setBase64EncodedResults(String base64EncodedResults) {
+			this.base64EncodedResults = base64EncodedResults;
+		}
+		@Override
+		public String toString() {
+			return "AssessmentPayload [config=" + config + ", tests=" + tests + ", base64EncodedResults="
+					+ base64EncodedResults + "]";
+		}
+		
+		
+		
+	}
+	
+	
 }
