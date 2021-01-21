@@ -91,7 +91,6 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 		payload.config = config;
 		payload.tests = testResults;
 		put.setEntity(new StringEntity(gson.toJson(payload)));
-		System.out.println(gson.toJson(payload));
 		HttpResponse response = client.execute(put);		
 
 	}
