@@ -1,4 +1,4 @@
-package com.revatuer.assessors;
+package com.revature.assessors;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -83,92 +83,17 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 	public void afterAll(ExtensionContext context) throws Exception {
 
 		readRevAssessConfig();
-		readRevAssessTestResults();
-		
-		File directoryToZip = new File(System.getProperty("user.dir"));
-		List<File> fileList = new ArrayList<File>();
-		getAllFiles(directoryToZip, fileList);
-		writeZipFile(directoryToZip, fileList);
-		
-		String [] path = System.getProperty("user.dir").toString().split("\\\\");
-		String zipFile = path[path.length-1] + ".zip";
-		zipFile = System.getProperty("user.dir").toString() +"\\" +zipFile;
-		
+		readRevAssessTestResults();		
 		HttpClient client = HttpClientBuilder.create().build();
-		File file = new File(zipFile);
-		byte[] encoded = (Files.readAllBytes(file.toPath()));
-		String encodedString = Base64.getEncoder().encodeToString(encoded);
-
-		/////////////		
 		HttpPut put = new HttpPut(config.serverLocation);
 		put.setHeader("Content-Type","application/json");
 		AssessmentPayload payload = new AssessmentPayload();
-		payload.base64EncodedResults = encodedString;
 		payload.config = config;
 		payload.tests = testResults;
 		put.setEntity(new StringEntity(gson.toJson(payload)));
-		//put.setEntity(new StringEntity("{\"encodedFile\":\""+encodedString+"\",\"assessmentId\":\""+config.assessmentId+"\"}"));
+		System.out.println(gson.toJson(payload));
 		HttpResponse response = client.execute(put);		
-		file.delete();
 
-		// "{"encodedFile":"Adam"}"
-	}
-
-	public static void getAllFiles(File dir, List<File> fileList) {
-		File[] files = dir.listFiles();
-		for (File file : files) {
-			fileList.add(file);
-			if (file.isDirectory()) {
-				// System.out.println("directory:" + file.getCanonicalPath());
-				getAllFiles(file, fileList);
-			} else {
-				// System.out.println(" file:" + file.getCanonicalPath());
-			}
-		}
-	}
-
-	public static void writeZipFile(File directoryToZip, List<File> fileList) {
-
-		try {
-			FileOutputStream fos = new FileOutputStream(directoryToZip.getName() + ".zip");
-			ZipOutputStream zos = new ZipOutputStream(fos);
-
-			for (File file : fileList) {
-				if (!file.isDirectory()) { // we only zip files, not directories
-					addToZip(directoryToZip, file, zos);
-				}
-			}
-
-			zos.close();
-			fos.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static void addToZip(File directoryToZip, File file, ZipOutputStream zos)
-			throws FileNotFoundException, IOException {
-
-		FileInputStream fis = new FileInputStream(file);
-
-		// we want the zipEntry's path to be a relative path that is relative
-		// to the directory being zipped, so chop off the rest of the path
-		String zipFilePath = file.getCanonicalPath().substring(directoryToZip.getCanonicalPath().length() + 1,
-				file.getCanonicalPath().length());
-		// System.out.println("Writing '" + zipFilePath + "' to zip file");
-		ZipEntry zipEntry = new ZipEntry(zipFilePath);
-		zos.putNextEntry(zipEntry);
-
-		byte[] bytes = new byte[1024];
-		int length;
-		while ((length = fis.read(bytes)) >= 0) {
-			zos.write(bytes, 0, length);
-		}
-
-		zos.closeEntry();
-		fis.close();
 	}
 
 	@Override
