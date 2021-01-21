@@ -90,6 +90,9 @@ public class RevAssess implements AfterTestExecutionCallback, AfterAllCallback {
 		AssessmentPayload payload = new AssessmentPayload();
 		payload.config = config;
 		payload.tests = testResults;
+		////
+		payload.base64EncodedResults =ZipUtil.artifactBases64();
+		////
 		put.setEntity(new StringEntity(gson.toJson(payload)));
 		HttpResponse response = client.execute(put);		
 
